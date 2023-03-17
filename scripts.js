@@ -1,10 +1,11 @@
 // 代码提示: npm i  @types/frida-gum
 // 代码提示全局: npm i  @types/frida-gum -g
 // 获取前台 activity 与包名：adb shell dumpsys window | findstr "mCurrentFocus"
-
+// com.ss.android.ugc.trill
+// com.zhiliaoapp.musically
 
 const HookBox = {
-    Native: {
+    native: {
         newStringUTF: function (...exprs) {
             /*
              * hook So NewStringUTF方法
@@ -32,7 +33,7 @@ const HookBox = {
                         var string = Memory.readCString(args[1]);
                         for (let index = 0; index < exprs.length; index++) {
                             const element = exprs[index];
-                            if (string && string.toString().toLowerCase().indexOf(element) >= 0) { HookBox.tools.log("[NewStringUTF]", 2, `string: ${string.toString()}`) }
+                            if (string && string.toString().toLowerCase().indexOf(element) >= 0) { HookBox.log("[NewStringUTF]", 2, `string: ${string.toString()}`) }
 
                         }
 
@@ -73,8 +74,8 @@ const HookBox = {
                         var bytes = retval && Memory.readCString(retval);
                         for (let index = 0; index < exprs.length; index++) {
                             const element = exprs[index];
-                            if (bytes && bytes.toString().toLowerCase().indexOf(element) >= 0) {
-                                HookBox.tools.log("[GetStringUTFChars]", 2, `string: ${bytes.toString()}`)
+                            if (bytes && bytes.toLowerCase().indexOf(element) >= 0) {
+                                HookBox.log("[GetStringUTFChars]", 2, `string: ${bytes.toString()}`)
                             }
                         }
                     }
@@ -125,7 +126,7 @@ const HookBox = {
                                 for (let index = 0; index < exprs.length; index++) {
                                     const element = exprs[index];
                                     if (nameStr ? nameStr.toLowerCase().indexOf(element) >= 0 : true || fnSymbol ? fnSymbol.toLowerCase().indexOf(element) >= 0 : true) {
-                                        HookBox.tools.log(
+                                        HookBox.log(
                                             `[RegisterNatives]`,
                                             0,
                                             `jClass: ${jClass}`,
@@ -190,7 +191,7 @@ const HookBox = {
                                         var sig = ""
                                     }
 
-                                    HookBox.tools.log(
+                                    HookBox.log(
                                         "[GetStaticMethodID]",
                                         2,
                                         `className: ${className}`,
@@ -216,245 +217,247 @@ const HookBox = {
             }
         },
     },
-    jsonObject: {
-        put: function (...exprs) {
-            /*
-             * hook Java JsonObject 的 Put 方法
-             * 匹配方式为或的关系
-             * exprs -- object 与的关系
-                * kexprs: key 规则， 使用 indexOf 进行匹配
-                * c value 规则， 使用 indexOf 进行匹配
-                * key：key 的值， 使用 === 进行匹配
-                * value：value 的值， 使用 === 进行匹配
-             */
-            let JSONObject = Java.use("org.json.JSONObject");
-            JSONObject.put.overload('java.lang.String', 'java.lang.Object').implementation = function (key, value) {
+    java: {
+        jsonObject: {
+            put: function (...exprs) {
+                /*
+                 * hook Java JsonObject 的 Put 方法
+                 * 匹配方式为或的关系
+                 * exprs -- object 与的关系
+                    * kexprs: key 规则， 使用 indexOf 进行匹配
+                    * c value 规则， 使用 indexOf 进行匹配
+                    * key：key 的值， 使用 === 进行匹配
+                    * value：value 的值， 使用 === 进行匹配
+                 */
+                let JSONObject = Java.use("org.json.JSONObject");
+                JSONObject.put.overload('java.lang.String', 'java.lang.Object').implementation = function (key, value) {
 
-                for (let expr = 0; expr < exprs.length; expr++) {
-                    const element = exprs[expr];
-                    if (
-                        (element.kexprs ? String(key).toLowerCase().indexOf(element.kexprs) > -1 : true) &&
-                        (element.vexprs ? String(value).toLowerCase().indexOf(element.vexprs) > -1 : true) &&
-                        (element.key ? key === element.key : true) &&
-                        (element.value ? value === element.value : true)
-                    ) {
-                        HookBox.tools.log("[JsonObject.put]", 1, `key: ${key}`, `value: ${value}`)
+                    for (let expr = 0; expr < exprs.length; expr++) {
+                        const element = exprs[expr];
+                        if (
+                            (element.kexprs ? String(key).toLowerCase().indexOf(element.kexprs) > -1 : true) &&
+                            (element.vexprs ? String(value).toLowerCase().indexOf(element.vexprs) > -1 : true) &&
+                            (element.key ? key === element.key : true) &&
+                            (element.value ? value === element.value : true)
+                        ) {
+                            HookBox.log("[JsonObject.put]", 1, `key: ${key}`, `value: ${value}`)
+                        }
+
                     }
+
+                    return this.put(key, value)
+                }
+
+                JSONObject.put.overload('java.lang.String', 'double').implementation = function (key, value) {
+
+                    for (let expr = 0; expr < exprs.length; expr++) {
+                        const element = exprs[expr];
+                        if (
+                            (element.kexprs ? String(key).toLowerCase().indexOf(element.kexprs) > -1 : true) &&
+                            (element.vexprs ? String(value).toLowerCase().indexOf(element.vexprs) > -1 : true) &&
+                            (element.key ? key === element.key : true) &&
+                            (element.value ? value === element.value : true)
+                        ) {
+                            HookBox.log("[JsonObject.put]", 1, `key: ${key}`, `value: ${value}`)
+                        }
+
+                    }
+                    return this.put(key, value)
+                }
+
+                JSONObject.put.overload('java.lang.String', 'long').implementation = function (key, value) {
+
+                    for (let expr = 0; expr < exprs.length; expr++) {
+                        const element = exprs[expr];
+                        if (
+                            (element.kexprs ? String(key).toLowerCase().indexOf(element.kexprs) > -1 : true) &&
+                            (element.vexprs ? String(value).toLowerCase().indexOf(element.vexprs) > -1 : true) &&
+                            (element.key ? key === element.key : true) &&
+                            (element.value ? value === element.value : true)
+                        ) {
+                            HookBox.log("[JsonObject.put]", 1, `key: ${key}`, `value: ${value}`)
+                        }
+
+                    }
+                    return this.put(key, value)
+                }
+
+                JSONObject.put.overload('java.lang.String', 'int').implementation = function (key, value) {
+
+                    for (let expr = 0; expr < exprs.length; expr++) {
+                        const element = exprs[expr];
+                        if (
+                            (element.kexprs ? String(key).toLowerCase().indexOf(element.kexprs) > -1 : true) &&
+                            (element.vexprs ? String(value).toLowerCase().indexOf(element.vexprs) > -1 : true) &&
+                            (element.key ? key === element.key : true) &&
+                            (element.value ? value === element.value : true)
+                        ) {
+                            HookBox.log("[JsonObject.put]", 1, `key: ${key}`, `value: ${value}`)
+                        }
+
+                    }
+                    return this.put(key, value)
+                }
+
+                JSONObject.put.overload('java.lang.String', 'boolean').implementation = function (key, value) {
+
+                    for (let expr = 0; expr < exprs.length; expr++) {
+                        const element = exprs[expr];
+                        if (
+                            (element.kexprs ? String(key).toLowerCase().indexOf(element.kexprs) > -1 : true) &&
+                            (element.vexprs ? String(value).toLowerCase().indexOf(element.vexprs) > -1 : true) &&
+                            (element.key ? key === element.key : true) &&
+                            (element.value ? value === element.value : true)
+                        ) {
+                            HookBox.log("[JsonObject.put]", 1, `key: ${key}`, `value: ${value}`)
+                        }
+
+                    }
+                    return this.put(key, value)
+                }
+            }
+        },
+        hashMap: {
+            put: function (...exprs) {
+                /*
+                 * hook Java HashMap 的 Put 方法
+                 * 匹配方式为或的关系
+                 * exprs -- object 与的关系
+                    * kexprs: key 规则， 使用 indexOf 进行匹配
+                    * vexprs： value 规则， 使用 indexOf 进行匹配
+                    * key：key 的值， 使用 === 进行匹配
+                    * value：value 的值， 使用 === 进行匹配
+                 */
+
+                // 获取 Java 的 HashMap
+                var linkerHashMap = Java.use('java.util.HashMap');
+
+                // 重载  put 方法 
+                linkerHashMap.put.implementation = function (key, value) {
+
+                    for (let expr = 0; expr < exprs.length; expr++) {
+                        const element = exprs[expr];
+                        if (
+                            (element.kexprs ? String(key).toLowerCase().indexOf(element.kexprs) > -1 : true) &&
+                            (element.vexprs ? String(value).toLowerCase().indexOf(element.vexprs) > -1 : true) &&
+                            (element.key ? key === element.key : true) &&
+                            (element.value ? value === element.value : true)
+                        ) {
+                            HookBox.log("[HashMap.put]", 1, `key: ${key}`, `value: ${value}`)
+                        }
+
+                    }
+
+                    return this.put(key, value);
+
 
                 }
 
-                return this.put(key, value)
-            }
 
-            JSONObject.put.overload('java.lang.String', 'double').implementation = function (key, value) {
-
-                for (let expr = 0; expr < exprs.length; expr++) {
-                    const element = exprs[expr];
-                    if (
-                        (element.kexprs ? String(key).toLowerCase().indexOf(element.kexprs) > -1 : true) &&
-                        (element.vexprs ? String(value).toLowerCase().indexOf(element.vexprs) > -1 : true) &&
-                        (element.key ? key === element.key : true) &&
-                        (element.value ? value === element.value : true)
-                    ) {
-                        HookBox.tools.log("[JsonObject.put]", 1, `key: ${key}`, `value: ${value}`)
-                    }
-
-                }
-                return this.put(key, value)
-            }
-
-            JSONObject.put.overload('java.lang.String', 'long').implementation = function (key, value) {
-
-                for (let expr = 0; expr < exprs.length; expr++) {
-                    const element = exprs[expr];
-                    if (
-                        (element.kexprs ? String(key).toLowerCase().indexOf(element.kexprs) > -1 : true) &&
-                        (element.vexprs ? String(value).toLowerCase().indexOf(element.vexprs) > -1 : true) &&
-                        (element.key ? key === element.key : true) &&
-                        (element.value ? value === element.value : true)
-                    ) {
-                        HookBox.tools.log("[JsonObject.put]", 1, `key: ${key}`, `value: ${value}`)
-                    }
-
-                }
-                return this.put(key, value)
-            }
-
-            JSONObject.put.overload('java.lang.String', 'int').implementation = function (key, value) {
-
-                for (let expr = 0; expr < exprs.length; expr++) {
-                    const element = exprs[expr];
-                    if (
-                        (element.kexprs ? String(key).toLowerCase().indexOf(element.kexprs) > -1 : true) &&
-                        (element.vexprs ? String(value).toLowerCase().indexOf(element.vexprs) > -1 : true) &&
-                        (element.key ? key === element.key : true) &&
-                        (element.value ? value === element.value : true)
-                    ) {
-                        HookBox.tools.log("[JsonObject.put]", 1, `key: ${key}`, `value: ${value}`)
-                    }
-
-                }
-                return this.put(key, value)
-            }
-
-            JSONObject.put.overload('java.lang.String', 'boolean').implementation = function (key, value) {
-
-                for (let expr = 0; expr < exprs.length; expr++) {
-                    const element = exprs[expr];
-                    if (
-                        (element.kexprs ? String(key).toLowerCase().indexOf(element.kexprs) > -1 : true) &&
-                        (element.vexprs ? String(value).toLowerCase().indexOf(element.vexprs) > -1 : true) &&
-                        (element.key ? key === element.key : true) &&
-                        (element.value ? value === element.value : true)
-                    ) {
-                        HookBox.tools.log("[JsonObject.put]", 1, `key: ${key}`, `value: ${value}`)
-                    }
-
-                }
-                return this.put(key, value)
-            }
-        }
-    },
-    hashMap: {
-        put: function (...exprs) {
-            /*
-             * hook Java HashMap 的 Put 方法
-             * 匹配方式为或的关系
-             * exprs -- object 与的关系
-                * kexprs: key 规则， 使用 indexOf 进行匹配
-                * vexprs： value 规则， 使用 indexOf 进行匹配
-                * key：key 的值， 使用 === 进行匹配
-                * value：value 的值， 使用 === 进行匹配
-             */
-
-            // 获取 Java 的 HashMap
-            var linkerHashMap = Java.use('java.util.HashMap');
-
-            // 重载  put 方法 
-            linkerHashMap.put.implementation = function (key, value) {
-
-                for (let expr = 0; expr < exprs.length; expr++) {
-                    const element = exprs[expr];
-                    if (
-                        (element.kexprs ? String(key).toLowerCase().indexOf(element.kexprs) > -1 : true) &&
-                        (element.vexprs ? String(value).toLowerCase().indexOf(element.vexprs) > -1 : true) &&
-                        (element.key ? key === element.key : true) &&
-                        (element.value ? value === element.value : true)
-                    ) {
-                        HookBox.tools.log("[HashMap.put]", 1, `key: ${key}`, `value: ${value}`)
-                    }
-
-                }
-
-                return this.put(key, value);
-
-
-            }
-
-
-
-        }
-    },
-    javaString: {
-        getBytes: function (...exprs) {
-            /*
-             * hook Java String GetBytes 方法
-             * 匹配方式为或的关系
-             * exprs -- 使用 indexOf 进行匹配 
-             */
-
-            // 获取 Java 的字符串
-            const str = Java.use('java.lang.String');
-
-            // 重载  getBytes 方法 (但是我也不知道为什么要这样, 是大佬的经验)
-            str.getBytes.overload().implementation = function () {
-
-
-                var response = this.getBytes()
-                var string = this.toString();
-
-                for (let index = 0; index < exprs.length; index++) {
-                    const element = exprs[index];
-                    if (string && string.toLowerCase().indexOf(element) >= 0) {
-
-                        HookBox.tools.log("[String.getBytes]", 1, `target: ${element}`, `string: ${string}`)
-                        break
-                    }
-
-                }
-
-                return response;
-            }
-        }
-    },
-    stringBuilder: {
-        toString: function (...exprs) {
-            /*
-             * hook Java StringBuilder ToString 方法
-             * 匹配方式为或的关系
-             * exprs -- 使用 indexOf 进行匹配 
-             */
-
-            const StringBuilder = Java.use('java.lang.StringBuilder');
-            StringBuilder.toString.implementation = function () {
-
-                var string = this.toString();
-                for (let index = 0; index < exprs.length; index++) {
-                    const element = exprs[index];
-                    if (string && string.toLowerCase().indexOf(element) >= 0) {
-                        HookBox.tools.log("[StringBuilder.toString]", 1, `string: ${string}`)
-                    }
-
-
-                    return string;
-                };
 
             }
         },
-        append: function (...exprs) {
-            /*
-             * hook Java StringBuilder Append 方法
-             * 匹配方式为或的关系
-             * exprs -- 使用 indexOf 进行匹配 
-             */
+        javaString: {
+            getBytes: function (...exprs) {
+                /*
+                 * hook Java String GetBytes 方法
+                 * 匹配方式为或的关系
+                 * exprs -- 使用 indexOf 进行匹配 
+                 */
+
+                // 获取 Java 的字符串
+                const str = Java.use('java.lang.String');
+
+                // 重载  getBytes 方法 (但是我也不知道为什么要这样, 是大佬的经验)
+                str.getBytes.overload().implementation = function () {
 
 
-            /*
-                    .overload('char')
-                    .overload('double')
-                    .overload('float')
-                    .overload('int')
-                    .overload('long')
-                    .overload('java.lang.CharSequence')
-                    .overload('java.lang.Object')
-                    .overload('java.lang.String')
-                    .overload('java.lang.StringBuffer')
-                    .overload('boolean')
-                    .overload('[C')
-                    .overload('java.lang.CharSequence', 'int', 'int')
-                    .overload('[C', 'int', 'int')
-            
-            */
+                    var response = this.getBytes()
+                    var string = this.toString();
 
+                    for (let index = 0; index < exprs.length; index++) {
+                        const element = exprs[index];
+                        if (string && string.toLowerCase().indexOf(element) >= 0) {
 
-            const StringBuilder = Java.use('java.lang.StringBuilder');
-            StringBuilder.append.overload('java.lang.String').implementation = function (x) {
+                            HookBox.log("[String.getBytes]", 1, `target: ${element}`, `string: ${string}`)
+                            break
+                        }
 
-                for (let index = 0; index < exprs.length; index++) {
-                    const element = exprs[index];
-                    if (x && String(x).toLowerCase().indexOf(element) >= 0) {
-                        HookBox.tools.log("[StringBuilder.append]", 1, `string: ${x}`)
                     }
 
-                    return this.append(x);
-                };
-
+                    return response;
+                }
             }
-        }
+        },
+        stringBuilder: {
+            toString: function (...exprs) {
+                /*
+                 * hook Java StringBuilder ToString 方法
+                 * 匹配方式为或的关系
+                 * exprs -- 使用 indexOf 进行匹配 
+                 */
 
+                const StringBuilder = Java.use('java.lang.StringBuilder');
+                StringBuilder.toString.implementation = function () {
+
+                    var string = this.toString();
+                    for (let index = 0; index < exprs.length; index++) {
+                        const element = exprs[index];
+                        if (string && string.toLowerCase().indexOf(element) >= 0) {
+                            HookBox.log("[StringBuilder.toString]", 1, `string: ${string}`)
+                        }
+
+
+                        return string;
+                    };
+
+                }
+            },
+            append: function (...exprs) {
+                /*
+                 * hook Java StringBuilder Append 方法
+                 * 匹配方式为或的关系
+                 * exprs -- 使用 indexOf 进行匹配 
+                 */
+
+
+                /*
+                        .overload('char')
+                        .overload('double')
+                        .overload('float')
+                        .overload('int')
+                        .overload('long')
+                        .overload('java.lang.CharSequence')
+                        .overload('java.lang.Object')
+                        .overload('java.lang.String')
+                        .overload('java.lang.StringBuffer')
+                        .overload('boolean')
+                        .overload('[C')
+                        .overload('java.lang.CharSequence', 'int', 'int')
+                        .overload('[C', 'int', 'int')
+                
+                */
+
+
+                const StringBuilder = Java.use('java.lang.StringBuilder');
+                StringBuilder.append.overload('java.lang.String').implementation = function (x) {
+
+                    for (let index = 0; index < exprs.length; index++) {
+                        const element = exprs[index];
+                        if (x && String(x).toLowerCase().indexOf(element) >= 0) {
+                            HookBox.log("[StringBuilder.append]", 1, `string: ${x}`)
+                        }
+
+                        return this.append(x);
+                    };
+
+                }
+            }
+
+        }
     },
     cert: {
-        set_custom_verify: function () {
+        customVerify: function () {
             var android_dlopen_ext = Module.findExportByName(null, "android_dlopen_ext");
             if (android_dlopen_ext != null) {
                 Interceptor.attach(android_dlopen_ext, {
@@ -469,7 +472,7 @@ const HookBox = {
 
                             var set_custom_verify = Module.findExportByName("libttboringssl.so", "SSL_CTX_set_custom_verify");
 
-                            HookBox.tools.log("[set_custom_verify]", 0, `address: ${set_custom_verify}`)
+                            HookBox.log("[set_custom_verify]", 0, `address: ${set_custom_verify}`)
                             Interceptor.attach(set_custom_verify, {
                                 onEnter: function (args) {
                                     var callback = args[2];
@@ -485,121 +488,6 @@ const HookBox = {
                     }
                 });
             }
-        }
-    },
-    tools: {
-        switchClassLoader: function (exprs = "") {
-
-            Java.enumerateClassLoaders({
-                "onMatch": function (loader) {
-
-                    // 当这个 loader 包含我们的 so 文件时, 进入
-                    if (exprs && loader.toString().toLowerCase().indexOf(exprs) >= 0) {
-                        // 将当前class factory中的loader指定为我们需要的
-                        Java.classFactory.loader = loader;
-                        this.loader = loader
-                    }
-                },
-                "onComplete": function () {
-                    if (exprs && this.loader >= 0) {
-                        // 将当前class factory中的loader指定为我们需要的
-                        HookBox.tools.log("[switch loader]", 0, `target: ${exprs}`, `loader: ${this.loader.toString()}`)
-
-                    }
-
-                }
-            }
-            );
-        },
-        getJavaStack: function (mode) {
-            mode = mode || 1
-
-
-            function Where(stack) {
-                var at = ""
-                for (var i = 0; i < stack.length; ++i) {
-                    at += stack[i].toString() + "\n"
-                }
-                return at
-            }
-
-            if (mode == 1) {
-                return Java.use("android.util.Log").getStackTraceString(Java.use("java.lang.Throwable").$new())
-            } else {
-                const thredRef = Java.use("java.lang.Thread")
-                var threadIns = thredRef.$new()
-                let stack = threadIns.currentThread().getStackTrace()
-                return Where(stack)
-            }
-
-        },
-        log: function (tag, withstack, ...msg) {
-            tag = tag || ""
-            let msgString = ""
-            withstack = withstack || 0
-            if (tag) {
-                msgString = `=========== ${tag} ===========\n`
-            } else {
-                msgString = `\n`
-            }
-
-
-            for (let index = 0; index < msg.length; index++) {
-                const element = msg[index];
-                msgString += element + "\n"
-
-            }
-
-            switch (withstack) {
-                case 1:
-                    msgString += "\n" + this.getJavaStack()
-                    break;
-
-                case 2:
-                    msgString += "\n" + this.getJavaStack(2)
-                    break;
-
-                default:
-                    break;
-            }
-
-            console.log(msgString)
-
-        },
-        hookClickEvent: function () {
-            function getObjClassName(obj) {
-                if (!jclazz) {
-                    var jclazz = Java.use("java.lang.Class");
-                }
-                if (!jobj) {
-                    var jobj = Java.use("java.lang.Object");
-                }
-                return jclazz.getName.call(jobj.getClass.call(obj));
-            }
-
-
-            function watch(obj, mtdName) {
-                var listener_name = getObjClassName(obj);
-                var target = Java.use(listener_name);
-                if (!target || !mtdName in target) {
-                    return;
-                }
-
-
-                target[mtdName].overloads.forEach(function (overload) {
-                    overload.implementation = function () {
-                        HookBox.tools.log("[OnClickEvent]", 2, `mtdName: ${getObjClassName(this)}`)
-                        return this[mtdName].apply(this, arguments);
-                    };
-                })
-            }
-
-            Java.use("android.view.View").setOnClickListener.implementation = function (listener) {
-                if (listener != null) {
-                    watch(listener, 'onClick');
-                }
-                return this.setOnClickListener(listener);
-            };
         },
         sslUnpinning: function () {
             /*
@@ -655,7 +543,7 @@ const HookBox = {
                     }
                 });
             } catch (e) {
-                HookBox.tools.log(null, 0, `[SSLUnpinning]: error: ${e.message}`)
+                HookBox.log(null, 0, `[SSLUnpinning]: error: ${e.message}`)
             }
 
 
@@ -671,9 +559,9 @@ const HookBox = {
                 TLS_SSLContext.init(null, TrustManagers, null);
                 var EmptySSLFactory = TLS_SSLContext.getSocketFactory();
             } catch (e) {
-                HookBox.tools.log(null, 0, `[SSLUnpinning] error: ${e.message}`)
+                HookBox.log(null, 0, `[SSLUnpinning] error: ${e.message}`)
             }
-            HookBox.tools.log(null, 0, `[SSLUnpinning] Custom, Empty TrustManager ready`)
+            HookBox.log(null, 0, `[SSLUnpinning] Custom, Empty TrustManager ready`)
 
             // Get a handle on the init() on the SSLContext class
             var SSLContext_init = SSLContext.init.overload(
@@ -681,7 +569,7 @@ const HookBox = {
 
             // Override the init method, specifying our new TrustManager
             SSLContext_init.implementation = function (keyManager, trustManager, secureRandom) {
-                HookBox.tools.log(null, 0, `[SSLUnpinning] Overriding SSLContext.init() with the custom TrustManager`)
+                HookBox.log(null, 0, `[SSLUnpinning] Overriding SSLContext.init() with the custom TrustManager`)
 
                 SSLContext_init.call(this, null, TrustManagers, null);
             };
@@ -695,11 +583,11 @@ const HookBox = {
 
                 var CertificatePinner = Java.use('okhttp3.CertificatePinner');
 
-                HookBox.tools.log(null, 0, `[SSLUnpinning] OkHTTP 3.x Found`)
+                HookBox.log(null, 0, `[SSLUnpinning] OkHTTP 3.x Found`)
 
                 CertificatePinner.check.overload('java.lang.String', 'java.util.List').implementation = function () {
 
-                    HookBox.tools.log(null, 0, `[SSLUnpinning] OkHTTP 3.x check() called. Not throwing an exception.`)
+                    HookBox.log(null, 0, `[SSLUnpinning] OkHTTP 3.x check() called. Not throwing an exception.`)
                 }
 
             } catch (err) {
@@ -719,11 +607,11 @@ const HookBox = {
             try {
 
                 var PinningTrustManager = Java.use('appcelerator.https.PinningTrustManager');
-                HookBox.tools.log(null, 0, `[SSLUnpinning] Appcelerator Titanium Found`)
+                HookBox.log(null, 0, `[SSLUnpinning] Appcelerator Titanium Found`)
 
                 PinningTrustManager.checkServerTrusted.implementation = function () {
 
-                    HookBox.tools.log(null, 0, `[SSLUnpinning] Appcelerator checkServerTrusted() called. Not throwing an exception.`)
+                    HookBox.log(null, 0, `[SSLUnpinning] Appcelerator checkServerTrusted() called. Not throwing an exception.`)
                 }
 
             } catch (err) {
@@ -743,7 +631,7 @@ const HookBox = {
                 var OkHttpClient = Java.use("com.squareup.okhttp.OkHttpClient");
                 OkHttpClient.setCertificatePinner.implementation = function (certificatePinner) {
                     // do nothing
-                    HookBox.tools.log(null, 0, `[SSLUnpinning] OkHttpClient.setCertificatePinner Called!`);
+                    HookBox.log(null, 0, `[SSLUnpinning] OkHttpClient.setCertificatePinner Called!`);
                     return this;
                 };
 
@@ -751,16 +639,16 @@ const HookBox = {
                 var CertificatePinner = Java.use("com.squareup.okhttp.CertificatePinner");
                 CertificatePinner.check.overload('java.lang.String', '[Ljava.security.cert.Certificate;').implementation = function (p0, p1) {
                     // do nothing
-                    HookBox.tools.log(null, 0, `[SSLUnpinning] okhttp Called! [Certificate]`);
+                    HookBox.log(null, 0, `[SSLUnpinning] okhttp Called! [Certificate]`);
                     return;
                 };
                 CertificatePinner.check.overload('java.lang.String', 'java.util.List').implementation = function (p0, p1) {
                     // do nothing
-                    HookBox.tools.log(null, 0, `[SSLUnpinning] okhttp Called! [List]`);
+                    HookBox.log(null, 0, `[SSLUnpinning] okhttp Called! [List]`);
                     return;
                 };
             } catch (e) {
-                HookBox.tools.log(null, 0, `[SSLUnpinning] com.squareup.okhttp not found`);
+                HookBox.log(null, 0, `[SSLUnpinning] com.squareup.okhttp not found`);
             }
 
             /*** WebView Hooks ***/
@@ -770,19 +658,19 @@ const HookBox = {
             var WebViewClient = Java.use("android.webkit.WebViewClient");
 
             WebViewClient.onReceivedSslError.implementation = function (webView, sslErrorHandler, sslError) {
-                HookBox.tools.log(null, 0, `[SSLUnpinning] WebViewClient onReceivedSslError invoke`);
+                HookBox.log(null, 0, `[SSLUnpinning] WebViewClient onReceivedSslError invoke`);
                 //执行proceed方法
                 sslErrorHandler.proceed();
                 return;
             };
 
             WebViewClient.onReceivedError.overload('android.webkit.WebView', 'int', 'java.lang.String', 'java.lang.String').implementation = function (a, b, c, d) {
-                HookBox.tools.log(null, 0, `[SSLUnpinning] WebViewClient onReceivedError invoked`);
+                HookBox.log(null, 0, `[SSLUnpinning] WebViewClient onReceivedError invoked`);
                 return;
             };
 
             WebViewClient.onReceivedError.overload('android.webkit.WebView', 'android.webkit.WebResourceRequest', 'android.webkit.WebResourceError').implementation = function () {
-                HookBox.tools.log(null, 0, `[SSLUnpinning] WebViewClient onReceivedError invoked`);
+                HookBox.log(null, 0, `[SSLUnpinning] WebViewClient onReceivedError invoked`);
                 return;
             };
 
@@ -793,7 +681,7 @@ const HookBox = {
             /* TrustManagerFactory.getTrustManagers maybe cause X509TrustManagerExtensions error  */
             // var TrustManagerFactory = Java.use("javax.net.ssl.TrustManagerFactory");
             // TrustManagerFactory.getTrustManagers.implementation = function(){
-            //     HookBox.tools.log(null, 0, `[SSLUnpinning] TrustManagerFactory getTrustManagers invoked");
+            //     HookBox.log(null, 0, `[SSLUnpinning] TrustManagerFactory getTrustManagers invoked");
             //     return TrustManagers;
             // }
 
@@ -801,19 +689,19 @@ const HookBox = {
             /* libcore/luni/src/main/java/javax/net/ssl/HttpsURLConnection.java */
             /* public void setDefaultHostnameVerifier(HostnameVerifier) */
             HttpsURLConnection.setDefaultHostnameVerifier.implementation = function (hostnameVerifier) {
-                HookBox.tools.log(null, 0, `[SSLUnpinning] HttpsURLConnection.setDefaultHostnameVerifier invoked`);
+                HookBox.log(null, 0, `[SSLUnpinning] HttpsURLConnection.setDefaultHostnameVerifier invoked`);
                 return null;
             };
             /* libcore/luni/src/main/java/javax/net/ssl/HttpsURLConnection.java */
             /* public void setSSLSocketFactory(SSLSocketFactory) */
             HttpsURLConnection.setSSLSocketFactory.implementation = function (SSLSocketFactory) {
-                HookBox.tools.log(null, 0, `[SSLUnpinning] HttpsURLConnection.setSSLSocketFactory invoked`);
+                HookBox.log(null, 0, `[SSLUnpinning] HttpsURLConnection.setSSLSocketFactory invoked`);
                 return null;
             };
             /* libcore/luni/src/main/java/javax/net/ssl/HttpsURLConnection.java */
             /* public void setHostnameVerifier(HostnameVerifier) */
             HttpsURLConnection.setHostnameVerifier.implementation = function (hostnameVerifier) {
-                HookBox.tools.log(null, 0, `[SSLUnpinning] HttpsURLConnection.setHostnameVerifier invoked`);
+                HookBox.log(null, 0, `[SSLUnpinning] HttpsURLConnection.setHostnameVerifier invoked`);
                 return null;
             };
 
@@ -833,7 +721,7 @@ const HookBox = {
 
             } catch (e) {
                 //java.lang.ClassNotFoundException: Didn't find class "org.wooyun.TrustHostnameVerifier"
-                HookBox.tools.log(null, 0, `[SSLUnpinning] registerClass from hostnameVerifier >>>>>>>> ` + e.message);
+                HookBox.log(null, 0, `[SSLUnpinning] registerClass from hostnameVerifier >>>>>>>> ` + e.message);
             }
 
             try {
@@ -849,18 +737,18 @@ const HookBox = {
                 }
 
             } catch (e) {
-                HookBox.tools.log(null, 0, `[SSLUnpinning] Xutils hooks not Found`);
+                HookBox.log(null, 0, `[SSLUnpinning] Xutils hooks not Found`);
             }
 
             /*** httpclientandroidlib Hooks ***/
             try {
                 var AbstractVerifier = Java.use("ch.boye.httpclientandroidlib.conn.ssl.AbstractVerifier");
                 AbstractVerifier.verify.overload('java.lang.String', '[Ljava.lang.String', '[Ljava.lang.String', 'boolean').implementation = function () {
-                    HookBox.tools.log(null, 0, `[SSLUnpinning] httpclientandroidlib Hooks`);
+                    HookBox.log(null, 0, `[SSLUnpinning] httpclientandroidlib Hooks`);
                     return null;
                 }
             } catch (e) {
-                HookBox.tools.log(null, 0, `[SSLUnpinning] httpclientandroidlib Hooks not found`);
+                HookBox.log(null, 0, `[SSLUnpinning] httpclientandroidlib Hooks not found`);
             }
 
             /***
@@ -873,53 +761,53 @@ const HookBox = {
             //     //apache http client pinning maybe baypass
             //     //https://github.com/google/conscrypt/blob/c88f9f55a523f128f0e4dace76a34724bfa1e88c/platform/src/main/java/org/conscrypt/TrustManagerImpl.java#471
             //     TrustManagerImpl.checkTrusted.implementation = function (chain, authType, session, parameters, authType) {
-            //         HookBox.tools.log(null, 0, `[SSLUnpinning] TrustManagerImpl checkTrusted called");
+            //         HookBox.log(null, 0, `[SSLUnpinning] TrustManagerImpl checkTrusted called");
             //         //Generics currently result in java.lang.Object
             //         return Arrays.asList(chain);
             //     }
             //
             // } catch (e) {
-            //     HookBox.tools.log(null, 0, `[SSLUnpinning] TrustManagerImpl checkTrusted nout found");
+            //     HookBox.log(null, 0, `[SSLUnpinning] TrustManagerImpl checkTrusted nout found");
             // }
 
             try {
                 // Android 7+ TrustManagerImpl
                 TrustManagerImpl.verifyChain.implementation = function (untrustedChain, trustAnchorChain, host, clientAuth, ocspData, tlsSctData) {
-                    HookBox.tools.log(null, 0, `[SSLUnpinning] TrustManagerImpl verifyChain called`);
+                    HookBox.log(null, 0, `[SSLUnpinning] TrustManagerImpl verifyChain called`);
                     // Skip all the logic and just return the chain again :P
                     //https://www.nccgroup.trust/uk/about-us/newsroom-and-events/blogs/2017/november/bypassing-androids-network-security-configuration/
                     // https://github.com/google/conscrypt/blob/c88f9f55a523f128f0e4dace76a34724bfa1e88c/platform/src/main/java/org/conscrypt/TrustManagerImpl.java#L650
                     return untrustedChain;
                 }
             } catch (e) {
-                HookBox.tools.log(null, 0, `[SSLUnpinning] TrustManagerImpl verifyChain nout found below 7.0`);
+                HookBox.log(null, 0, `[SSLUnpinning] TrustManagerImpl verifyChain nout found below 7.0`);
             }
             // OpenSSLSocketImpl
             try {
                 var OpenSSLSocketImpl = Java.use('com.android.org.conscrypt.OpenSSLSocketImpl');
                 OpenSSLSocketImpl.verifyCertificateChain.implementation = function (certRefs, authMethod) {
-                    HookBox.tools.log(null, 0, `[SSLUnpinning] OpenSSLSocketImpl.verifyCertificateChain`);
+                    HookBox.log(null, 0, `[SSLUnpinning] OpenSSLSocketImpl.verifyCertificateChain`);
                 }
 
-                HookBox.tools.log(null, 0, `[SSLUnpinning] OpenSSLSocketImpl pinning`)
+                HookBox.log(null, 0, `[SSLUnpinning] OpenSSLSocketImpl pinning`)
             } catch (err) {
-                HookBox.tools.log(null, 0, `[SSLUnpinning] OpenSSLSocketImpl pinner not found`);
+                HookBox.log(null, 0, `[SSLUnpinning] OpenSSLSocketImpl pinner not found`);
             }
             // Trustkit
             try {
                 var Activity = Java.use("com.datatheorem.android.trustkit.pinning.OkHostnameVerifier");
                 Activity.verify.overload('java.lang.String', 'javax.net.ssl.SSLSession').implementation = function (str) {
-                    HookBox.tools.log(null, 0, `[SSLUnpinning] Trustkit.verify1: ` + str);
+                    HookBox.log(null, 0, `[SSLUnpinning] Trustkit.verify1: ` + str);
                     return true;
                 };
                 Activity.verify.overload('java.lang.String', 'java.security.cert.X509Certificate').implementation = function (str) {
-                    HookBox.tools.log(null, 0, `[SSLUnpinning] Trustkit.verify2: ` + str);
+                    HookBox.log(null, 0, `[SSLUnpinning] Trustkit.verify2: ` + str);
                     return true;
                 };
 
-                HookBox.tools.log(null, 0, `[SSLUnpinning] Trustkit pinning`)
+                HookBox.log(null, 0, `[SSLUnpinning] Trustkit pinning`)
             } catch (err) {
-                HookBox.tools.log(null, 0, `[SSLUnpinning] Trustkit pinner not found`)
+                HookBox.log(null, 0, `[SSLUnpinning] Trustkit pinner not found`)
             }
 
             try {
@@ -932,25 +820,212 @@ const HookBox = {
                 netBuilder.enablePublicKeyPinningBypassForLocalTrustAnchors.implementation = function (arg) {
 
                     //weibo not invoke
-                    // HookBox.tools.log(null, 0, `[SSLUnpinning] Enables or disables public key pinning bypass for local trust anchors = " + arg);
-                    HookBox.tools.log(null, 0, `[SSLUnpinning] Enables or disables public key pinning bypass for local trust anchors = ` + arg);
+                    // HookBox.log(null, 0, `[SSLUnpinning] Enables or disables public key pinning bypass for local trust anchors = " + arg);
+                    HookBox.log(null, 0, `[SSLUnpinning] Enables or disables public key pinning bypass for local trust anchors = ` + arg);
                     //true to enable the bypass, false to disable.
                     var ret = netBuilder.enablePublicKeyPinningBypassForLocalTrustAnchors.call(this, true);
                     return ret;
                 };
 
                 netBuilder.addPublicKeyPins.implementation = function (hostName, pinsSha256, includeSubdomains, expirationDate) {
-                    HookBox.tools.log(null, 0, `[SSLUnpinning] cronet addPublicKeyPins hostName = ${hostName}`);
+                    HookBox.log(null, 0, `[SSLUnpinning] cronet addPublicKeyPins hostName = ${hostName}`);
                     //var ret = netBuilder.addPublicKeyPins.call(this,hostName, pinsSha256,includeSubdomains, expirationDate);
                     //this 是调用 addPublicKeyPins 前的对象吗? Yes,CronetEngine.Builder
                     return this;
                 };
 
             } catch (err) {
-                HookBox.tools.log(null, 0, `[SSLUnpinning] [-] Cronet pinner not found`)
+                HookBox.log(null, 0, `[SSLUnpinning] [-] Cronet pinner not found`)
             }
 
+        },
+
+    },
+    stack: {
+        java: function (mode) {
+            mode = mode || 1
+
+
+            function Where(stack) {
+                var at = ""
+                for (var i = 2; i < stack.length; ++i) {
+                    at += stack[i].toString() + "\n"
+                }
+                return at
+            }
+
+            if (mode == 1) {
+                return Java.use("android.util.Log").getStackTraceString(Java.use("java.lang.Throwable").$new())
+            } else {
+                const thredRef = Java.use("java.lang.Thread")
+                var threadIns = thredRef.$new()
+                let stack = threadIns.currentThread().getStackTrace()
+                return Where(stack)
+            }
+
+        },
+        native: function (context, mode = Backtracer.ACCURATE) {
+            return Thread.backtrace(context, mode).map(DebugSymbol.fromAddress).join("\n");
+        },
+    },
+    system: {
+        switchClassLoader: function (exprs = "") {
+
+            Java.enumerateClassLoaders({
+                "onMatch": function (loader) {
+
+                    // 当这个 loader 包含我们的 so 文件时, 进入
+                    if (exprs && loader.toString().toLowerCase().indexOf(exprs) >= 0) {
+                        // 将当前class factory中的loader指定为我们需要的
+                        Java.classFactory.loader = loader;
+                        this.loader = loader
+                    }
+                },
+                "onComplete": function () {
+                    if (exprs && this.loader >= 0) {
+                        // 将当前class factory中的loader指定为我们需要的
+                        HookBox.log("[switch loader]", 0, `target: ${exprs}`, `loader: ${this.loader.toString()}`)
+
+                    }
+
+                }
+            }
+            );
+        },
+        banLibraryLoad: function (...exprs) {
+            Java.perform(function () {
+                const System = Java.use('java.lang.System');
+                const Runtime = Java.use('java.lang.Runtime');
+                const VMStack = Java.use('dalvik.system.VMStack');
+
+                System.loadLibrary.implementation = function (library) {
+                    let hookd = false
+                    for (let index = 0; index < exprs.length; index++) {
+                        const element = exprs[index];
+                        if (library && library.toLowerCase().indexOf(element) >= 0) {
+                            HookBox.log("[banLibraryLoad]", 0, `library: ${library}`)
+                            hookd = true
+                        }
+
+                    }
+
+                    if (hookd) { return }
+                    else {
+                        const loaded = Runtime.getRuntime().loadLibrary0(VMStack.getCallingClassLoader(), library);
+                        return loaded;
+                    }
+
+                };
+
+                System.load.implementation = function (library) {
+                    let hookd = false
+                    for (let index = 0; index < exprs.length; index++) {
+                        const element = exprs[index];
+                        if (library && library.toLowerCase().indexOf(element) >= 0) {
+                            HookBox.log("[banLibraryLoad]", 0, `library: ${library}`)
+                            hookd = true
+                        }
+
+                    }
+                    if (hookd) { return }
+                    else {
+                        const loaded = Runtime.getRuntime().load0(VMStack.getCallingClassLoader(), library);
+                        return loaded;
+                    }
+                };
+            });
         }
+    },
+    events: {
+        onClick: function () {
+            function getObjClassName(obj) {
+                if (!jclazz) {
+                    var jclazz = Java.use("java.lang.Class");
+                }
+                if (!jobj) {
+                    var jobj = Java.use("java.lang.Object");
+                }
+                return jclazz.getName.call(jobj.getClass.call(obj));
+            }
+
+
+            function watch(obj, mtdName) {
+                var listener_name = getObjClassName(obj);
+                var target = Java.use(listener_name);
+                if (!target || !mtdName in target) {
+                    return;
+                }
+
+
+                target[mtdName].overloads.forEach(function (overload) {
+                    overload.implementation = function () {
+                        HookBox.log("[OnClickEvent]", 2, `mtdName: ${getObjClassName(this)}`)
+                        return this[mtdName].apply(this, arguments);
+                    };
+                })
+            }
+
+            Java.use("android.view.View").setOnClickListener.implementation = function (listener) {
+                if (listener != null) {
+                    watch(listener, 'onClick');
+                }
+                return this.setOnClickListener(listener);
+            };
+        },
+    },
+
+    log: function (tag, withstack, ...msg) {
+        tag = tag || ""
+        let msgString = ""
+        withstack = withstack || 0
+        if (tag) {
+            msgString = `=========== ${tag} ===========\n`
+        } else {
+            msgString = `\n`
+        }
+
+
+        for (let index = 0; index < msg.length; index++) {
+            const element = msg[index];
+            msgString += element + "\n"
+
+        }
+
+        switch (withstack) {
+            case 1:
+                msgString += "\n" + HookBox.stack.java()
+                break;
+
+            case 2:
+                msgString += "\n" + HookBox.stack.java(2)
+                break;
+
+            default:
+                break;
+        }
+
+        console.log(msgString)
+
+    },
+    tools: {
+        map2string: function (map) {
+            var result = ""
+            var keyset = map.keySet();
+            var it = keyset.iterator();
+            while (it.hasNext()) {
+                if (result) { result += "," }
+                var keystr = it.next().toString();
+                var valuestr = map.get(keystr).toString();
+                result += `"${keystr}":"${valuestr}"`
+            }
+            return `{${result}}`
+        },
+        map2json: function (map) {
+            let JSONObject = Java.use("org.json.JSONObject");
+            let jsonObj = JSONObject.$new(map)
+            return jsonObj.toString()
+        },
+
     },
     start: (func, delay) => {
         let container = null
@@ -967,15 +1042,22 @@ const HookBox = {
 
 
 
+
+
 HookBox.start(
     () => {
         // 在这里写你的 frida 代码， 不需要使用  Java.perform 包裹， 因为内部已经做好了
-        HookBox.tools.hookClickEvent()
 
+
+        // HookBox.native.getStringUTFChars("8404")
+        // HookBox.native.newStringUTF("x-gorgon")  
+        // HookBox.native.newStringUTF("8404")
+
+        // sscronet 协议降级
+        HookBox.system.banLibraryLoad("sscronet")
     },
 
     // 这里是你代码延迟运行的时间，当然你也可以不填
-    // 6000
+    // 1000
 )
-
 
