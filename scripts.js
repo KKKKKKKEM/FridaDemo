@@ -31,7 +31,7 @@ const HookBox = {
 
                         var string = Memory.readCString(args[1]);
                         for (let index = 0; index < exprs.length; index++) {
-                            const element = array[index];
+                            const element = exprs[index];
                             if (string && string.toString().toLowerCase().indexOf(element) >= 0) { HookBox.tools.prettyPrint("[NewStringUTF]", 2, `string: ${string.toString()}`) }
 
                         }
@@ -39,6 +39,45 @@ const HookBox = {
 
                     },
                     onLeave: function (retvalue) { }
+
+                })
+
+
+
+            }
+        },
+        getStringUTFChars: function (...exprs) {
+            /*
+             * hook So GetStringUTFChars 方法
+             * 匹配方式为或的关系
+             * exprs -- 使用 indexOf 进行匹配 
+             */
+
+            var GetStringUTFChars_addr = null;
+            var symbols = Module.enumerateSymbolsSync("libart.so");
+
+            for (var i in symbols) {
+                var symbol = symbols[i];
+                if (symbol.name == "_ZN3art3JNI17GetStringUTFCharsEP7_JNIEnvP8_jstringPh") {
+                    GetStringUTFChars_addr = symbol.address;
+                }
+            }
+
+            if (GetStringUTFChars_addr) {
+
+                Interceptor.attach(GetStringUTFChars_addr, {
+
+
+                    onEnter: function (args) { },
+                    onLeave: function (retval) {
+                        var bytes = retval && Memory.readCString(retval);
+                        for (let index = 0; index < exprs.length; index++) {
+                            const element = exprs[index];
+                            if (bytes && bytes.toString().toLowerCase().indexOf(element) >= 0) {
+                                HookBox.tools.prettyPrint("[GetStringUTFChars]", 2, `string: ${bytes.toString()}`)
+                            }
+                        }
+                    }
 
                 })
 
@@ -111,6 +150,69 @@ const HookBox = {
 
                     })
                 }
+            }
+        },
+        getStaticMethodID: function (...exprs) {
+            /*
+             * hook So getStaticMethodID 方法
+             * 匹配方式为或的关系
+             * exprs -- 使用 indexOf 进行匹配 
+             */
+
+            var getStaticMethodID_addr = null;
+            var symbols = Module.enumerateSymbolsSync("libart.so");
+
+            for (var i in symbols) {
+                var symbol = symbols[i];
+                if (symbol.name == "_ZN3art3JNI17GetStaticMethodIDEP7_JNIEnvP7_jclassPKcS6_") {
+                    getStaticMethodID_addr = symbol.address;
+                }
+            }
+
+            if (getStaticMethodID_addr) {
+
+                Interceptor.attach(getStaticMethodID_addr, {
+
+
+                    onEnter: function (args) {
+                        if (args[2] != null) {
+                            var clazz = args[1];
+                            var className = Java.vm.tryGetEnv().getClassName(clazz);
+                            var name = Memory.readCString(args[2]);
+                            for (let index = 0; index < exprs.length; index++) {
+                                const element = exprs[index];
+                                if (name && name.toLowerCase().indexOf(element) >= 0) {
+                                    let debugSymbol = DebugSymbol.fromAddress(this.returnAddress)
+                                    if (args[3] != null) {
+                                        var sig = Memory.readCString(args[3]);
+
+                                    } else {
+                                        var sig = ""
+                                    }
+
+                                    HookBox.tools.prettyPrint(
+                                        "[GetStaticMethodID]",
+                                        2,
+                                        `className: ${className}`,
+                                        `name: ${name}`,
+                                        `sig: ${sig}`,
+                                        `debugSymbol: ${debugSymbol}`,
+                                    )
+
+                                }
+
+                            }
+
+
+
+                        }
+                    },
+                    onLeave: function (retvalue) { }
+
+                })
+
+
+
             }
         },
     },
@@ -478,7 +580,7 @@ const HookBox = {
 HookBox.start(
     () => {
         // 在这里写你的 frida 代码， 不需要使用  Java.perform 包裹， 因为内部已经做好了
-        HookBox.Native.registerNatives("sign")
+        HookBox.Native.getStringUTFChars("8404")
 
     },
 
