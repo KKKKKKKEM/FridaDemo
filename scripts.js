@@ -1,8 +1,7 @@
 // 代码提示: npm i  @types/frida-gum
 // 代码提示全局: npm i  @types/frida-gum -g
 // 获取前台 activity 与包名：adb shell dumpsys window | findstr "mCurrentFocus"
-// com.ss.android.ugc.trill
-// com.zhiliaoapp.musically
+
 
 const HookBox = {
     native: {
@@ -88,7 +87,7 @@ const HookBox = {
         },
         registerNatives: function (...exprs) {
 
-            var RegisterNatives_addr = null;
+            // var RegisterNatives_addr = null;
             var symbols = Module.enumerateSymbolsSync("libart.so");
 
             for (var i in symbols) {
@@ -870,7 +869,12 @@ const HookBox = {
     },
     system: {
         switchClassLoader: function (exprs = "") {
-
+            /*
+             * 切换 classLoader 
+             * 
+             * exprs: 模糊匹配, indexOf
+             * 
+             */
             Java.enumerateClassLoaders({
                 "onMatch": function (loader) {
 
@@ -893,6 +897,12 @@ const HookBox = {
             );
         },
         banLibraryLoad: function (...exprs) {
+            /*
+             * 禁止 so 文件加载
+             * 
+             * exprs: 不定参数, 模糊匹配 indexOf
+             * 
+             */
             Java.perform(function () {
                 const System = Java.use('java.lang.System');
                 const Runtime = Java.use('java.lang.Runtime');
@@ -938,6 +948,12 @@ const HookBox = {
     },
     events: {
         onClick: function () {
+            /**
+             * 
+             * hook 点击事件
+             * @param {*} obj 
+             * @returns 
+             */
             function getObjClassName(obj) {
                 if (!jclazz) {
                     var jclazz = Java.use("java.lang.Class");
@@ -973,7 +989,36 @@ const HookBox = {
             };
         },
     },
+    tools: {
+        map2string: function (map) {
+            /**
+             * 将 map 转为 string
+             * 
+             * 
+             */
+            var result = ""
+            var keyset = map.keySet();
+            var it = keyset.iterator();
+            while (it.hasNext()) {
+                if (result) { result += "," }
+                var keystr = it.next().toString();
+                var valuestr = map.get(keystr).toString();
+                result += `"${keystr}":"${valuestr}"`
+            }
+            return `{${result}}`
+        },
+        map2json: function (map) {
+            /**
+             * 将 map 转为 json string
+             * 
+             * 
+             */
+            let JSONObject = Java.use("org.json.JSONObject");
+            let jsonObj = JSONObject.$new(map)
+            return jsonObj.toString()
+        },
 
+    },
     log: function (tag, withstack, ...msg) {
         tag = tag || ""
         let msgString = ""
@@ -1007,26 +1052,6 @@ const HookBox = {
         console.log(msgString)
 
     },
-    tools: {
-        map2string: function (map) {
-            var result = ""
-            var keyset = map.keySet();
-            var it = keyset.iterator();
-            while (it.hasNext()) {
-                if (result) { result += "," }
-                var keystr = it.next().toString();
-                var valuestr = map.get(keystr).toString();
-                result += `"${keystr}":"${valuestr}"`
-            }
-            return `{${result}}`
-        },
-        map2json: function (map) {
-            let JSONObject = Java.use("org.json.JSONObject");
-            let jsonObj = JSONObject.$new(map)
-            return jsonObj.toString()
-        },
-
-    },
     start: (func, delay) => {
         let container = null
         if (delay) {
@@ -1053,8 +1078,11 @@ HookBox.start(
         // HookBox.native.newStringUTF("x-gorgon")  
         // HookBox.native.newStringUTF("8404")
 
-        // sscronet 协议降级
+        // 协议降级, 不降级 hook 不到
+        // Java.use("org.chromium.CronetClient").tryCreateCronetEngine.implementation = function (context1, b1, b2, b3, b4, str1, executor1, b5) {
+        // }
         HookBox.system.banLibraryLoad("sscronet")
+
     },
 
     // 这里是你代码延迟运行的时间，当然你也可以不填
